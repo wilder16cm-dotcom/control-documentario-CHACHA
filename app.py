@@ -9,7 +9,7 @@ import re
 if 'pdf_actual' not in st.session_state:
     st.session_state.pdf_actual = None
 if 'doc_seleccionado' not in st.session_state:
-    st.session_state.doc_seleccionado = None # NUEVO: Guarda el nombre de la carta al hacer clic
+    st.session_state.doc_seleccionado = None
 
 # 1. Configuración general de la página
 st.set_page_config(page_title="Control Documentario - Chachapoyas", layout="wide")
@@ -17,17 +17,13 @@ st.set_page_config(page_title="Control Documentario - Chachapoyas", layout="wide
 # CSS personalizado para eliminar márgenes y estilizar la línea de tiempo
 st.markdown("""
     <style>
-    /* Ocultar el header predeterminado de Streamlit */
     header {visibility: hidden;}
-    
-    /* ELIMINAR EL ESPACIO BLANCO SUPERIOR */
     .block-container {
         padding-top: 1rem;
         padding-bottom: 1rem;
         max-width: 95%;
     }
 
-    /* Estilos para el eje central */
     .eje-contenedor {
         display: flex;
         flex-direction: column;
@@ -63,32 +59,51 @@ st.markdown("""
         margin-bottom: 5px;
     }
 
-    /* Colores para tarjetas */
     .tarjeta-env {
-        background-color: #f0f8ff;
+        background-color: #f0f8ff !important;
         padding: 10px;
         border-left: 4px solid #4A90E2;
         border-radius: 4px;
         margin-bottom: 10px;
+        -webkit-print-color-adjust: exact;
     }
     .tarjeta-recb {
-        background-color: #f4fbf4;
+        background-color: #f4fbf4 !important;
         padding: 10px;
         border-left: 4px solid #50E3C2;
         border-radius: 4px;
         margin-bottom: 10px;
+        -webkit-print-color-adjust: exact;
     }
     .asunto-texto {
         font-size: 0.9em;
         color: #333333;
         margin-bottom: 8px;
     }
+
+    /* --- MAGIA CSS PARA AISLAR SOLO LA ZONA DE IMPRESIÓN --- */
+    @media print {
+        /* Ocultar absolutamente todo lo demás de la página */
+        body * {
+            visibility: hidden !important;
+        }
+        /* Mostrar únicamente el contenedor de la izquierda y sus hijos */
+        #zona-impresion, #zona-impresion * {
+            visibility: visible !important;
+        }
+        #zona-impresion {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100% !important;
+        }
+        /* Ocultar los botones de "Ver PDF" dentro del reporte impreso para que quede limpio */
+        .stButton {
+            display: none !important;
+        }
+    }
     </style>
 """, unsafe_allow_html=True)
-
-# Inicializar variable de estado para mantener el PDF abierto
-if 'pdf_actual' not in st.session_state:
-    st.session_state.pdf_actual = None
 
 # ==========================================
 # CARGA DE DATOS (Base de datos y Drive)
@@ -170,6 +185,32 @@ st.divider()
 col_timeline, col_visor = st.columns([1.5, 2]) 
 
 with col_timeline:
+    st.markdown('<div id="zona-impresion">', unsafe_allow_html=True)
+    
+    col_info_lin, col_btn_print = st.columns([2, 1])
+    with col_info_lin:
+        st.markdown(f"### Componente: `{componente_seleccionado}`")
+    with col_btn_print:
+        # Solución limpia sin st.components.v1.html: Usamos un link estilizado como botón con JavaScript nativo
+        st.markdown("""
+            <div style="text-align: right;">
+                <a href="javascript:window.print();" style="
+                    display: inline-block;
+                    background-color: #ffffff;
+                    color: #31333F;
+                    border: 1px solid #d0d5dd;
+                    padding: 0.45rem 0.75rem;
+                    font-weight: 400;
+                    border-radius: 0.5rem;
+                    text-decoration: none;
+                    font-size: 0.9rem;
+                    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+                ">
+                    🖨️ Exportar a PDF
+                </a>
+            </div>
+        """, unsafe_allow_html=True)
+
     h_env, h_eje, h_recb = st.columns([3, 1, 3])
     h_env.markdown("<h4 style='text-align: center; color: #4A90E2;'>Enviadas</h4>", unsafe_allow_html=True)
     h_recb.markdown("<h4 style='text-align: center; color: #50E3C2;'>Recibidas</h4>", unsafe_allow_html=True)
@@ -194,10 +235,9 @@ with col_timeline:
                     st.markdown(f"""
                         <div class="tarjeta-env">
                             <strong>✉️ {row['NRO_DOC']}</strong>
-                            <p class="asunto-texto">{row['ASUNTO']}</p>
+                            <p class="asunto-texto">{row['ASUNTO']}], row['ASUNTO']</p>
                         </div>
                     """, unsafe_allow_html=True)
-                    # Al hacer clic, guarda tanto el link como el número de documento
                     if st.button("Ver PDF", key=f"btn_env_{row['ID_REGISTRO']}", use_container_width=True):
                         st.session_state.pdf_actual = row.get('ARCHIVO_PDF')
                         st.session_state.doc_seleccionado = row.get('NRO_DOC')
@@ -212,6 +252,8 @@ with col_timeline:
                     if st.button("Ver PDF", key=f"btn_recb_{row['ID_REGISTRO']}", use_container_width=True):
                         st.session_state.pdf_actual = row.get('ARCHIVO_PDF')
                         st.session_state.doc_seleccionado = row.get('NRO_DOC')
+                        
+    st.markdown('</div>', unsafe_allow_html=True)
 
 with col_visor:
     st.subheader("Visor de Documento")
@@ -220,7 +262,7 @@ with col_visor:
         
         nro_orig = str(st.session_state.doc_seleccionado).upper()
         
-        # 1. PRIMER FILTRO: Limpieza numérica estricta (El ADN matemático)
+        # 1. PRIMER FILTRO: Limpieza numérica estricta
         match_estricto = re.search(r'0*(\d+)\s*[-/]?\s*(2025|2026)', nro_orig)
         
         if match_estricto:
@@ -242,19 +284,14 @@ with col_visor:
         st.markdown(f"### 🔍 Coincidencias exactas en Drive para: `{nro_limpio}`")
         
         try:
-            # Aplicamos la búsqueda por número y año
             resultados = df_nube[df_nube['Nombre'].str.contains(patron_flexible, case=False, regex=True, na=False)]
             
-            # 2. SEGUNDO FILTRO: Palabras Clave (El francotirador)
             if not resultados.empty:
-                # Si es una carta enviada de tipo RL
                 if "RL" in nro_orig:
                     resultados = resultados[resultados['Nombre'].str.contains("RL", case=False, na=False)]
-                # Si es una carta enviada de tipo GV
                 elif "GV" in nro_orig:
                     resultados = resultados[resultados['Nombre'].str.contains("GV", case=False, na=False)]
                 
-                # Si es un documento recibido (o enviado) que involucra al MTC
                 if "MTC" in nro_orig:
                     resultados = resultados[resultados['Nombre'].str.contains("MTC", case=False, na=False)]
                     
@@ -267,7 +304,25 @@ with col_visor:
                     st.session_state.pdf_actual = r['URL']
                     st.rerun()
         else:
-            st.error("No se encontraron archivos en Drive que cumplan con la numeración y las siglas exactas (GV, RL, MTC).")
+            st.error("No se encontraron archivos en Drive con la numeración y siglas exactas.")
+
+        # ==========================================
+        # BUSCADOR MANUAL PERMANENTE (SALVAVIDAS)
+        # ==========================================
+        st.markdown("---")
+        st.markdown("### 🔎 Búsqueda Manual de Respaldo en Drive")
+        busqueda_emergencia = st.text_input("Escribe otra palabra clave o número:", key="input_emergencia")
+        
+        if busqueda_emergencia:
+            res_emergencia = df_nube[df_nube['Nombre'].str.contains(busqueda_emergencia, case=False, na=False)]
+            if not res_emergencia.empty:
+                st.success(f"Se encontraron {len(res_emergencia)} archivos:")
+                for idx, r in res_emergencia.iterrows():
+                    if st.button(f"📄 Abrir: {r['Nombre']}", key=f"emer_{idx}"):
+                        st.session_state.pdf_actual = r['URL']
+                        st.rerun()
+            else:
+                st.warning("No se encontraron archivos con ese término en Drive.")
             
         if st.button("❌ Cerrar Panel"):
             st.session_state.pdf_actual = None
@@ -275,4 +330,18 @@ with col_visor:
             st.rerun()
             
     else:
-        st.info("👈 Selecciona 'Ver PDF' en la línea de tiempo para buscar o leer el documento.")
+        st.info("👈 Selecciona 'Ver PDF' en la línea de tiempo o usa este buscador libre para explorar todos los archivos en Drive:")
+        
+        busqueda_libre_drive = st.text_input("🔍 Buscador general en Drive:", placeholder="Escribe número, palabra clave o contratista...")
+        
+        if busqueda_libre_drive:
+            resultados_libres = df_nube[df_nube['Nombre'].str.contains(busqueda_libre_drive, case=False, na=False)]
+            
+            if not resultados_libres.empty:
+                st.success(f"Se encontraron {len(resultados_libres)} archivos:")
+                for idx, r in resultados_libres.iterrows():
+                    if st.button(f"📄 Abrir: {r['Nombre']}", key=f"libre_drive_{idx}"):
+                        st.session_state.pdf_actual = r['URL']
+                        st.rerun()
+            else:
+                st.warning("No se encontraron archivos en Drive con ese término.")
