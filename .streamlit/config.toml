@@ -1,0 +1,15 @@
+[theme]
+# Fuerza el modo claro ignorando el navegador del usuario
+base = "light"
+
+# Color de fondo principal (Color hueso / Off-white)
+backgroundColor = "#F9F8F4"
+
+# Color de fondo secundario (paneles laterales y cajas)
+secondaryBackgroundColor = "#F0F2F6"
+
+# Color del texto principal
+textColor = "#333333"
+
+# Color de acento (para los botones y selecciones)
+primaryColor = "#4A90E2"
