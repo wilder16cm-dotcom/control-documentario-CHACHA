@@ -1,0 +1,18 @@
+[theme]
+# Forzar el modo claro corporativo
+base = "light"
+
+# Color principal (Azul ingeniería/corporativo para botones y acentos)
+primaryColor = "#0056b3"
+
+# Color de fondo principal (Blanco puro)
+backgroundColor = "#ffffff"
+
+# Color de fondo secundario (Gris muy claro para los paneles laterales o inputs)
+secondaryBackgroundColor = "#f0f2f6"
+
+# Color del texto (Gris oscuro, casi negro, para máxima legibilidad)
+textColor = "#262730"
+
+# Fuente profesional
+font = "sans serif"
