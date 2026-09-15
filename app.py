@@ -123,6 +123,10 @@ def cargar_links_nube():
         print(f"Error al cargar links desde Neon: {e}") 
         return pd.DataFrame(columns=['Nombre', 'URL', 'Carpeta'])
 
+# ¡¡¡ESTAS SON LAS LÍNEAS QUE FALTABAN!!!
+df = cargar_datos()
+df_nube = cargar_links_nube()
+
 # ==========================================
 # ENCABEZADO Y FILTROS DINÁMICOS
 # ==========================================
