@@ -136,36 +136,25 @@ if texto_busqueda:
 # ==========================================
 # FUNCIÓN DEL VISOR DE PDF
 # ==========================================
-@st.cache_data(ttl=600)
-def cargar_datos():
-    db_url = st.secrets["DB_URL"]
-    engine = create_engine(db_url)
-    
-    # 1. Traemos la tabla principal de cartas
-    query_cartas = 'SELECT * FROM control_documentario ORDER BY "FECHA_DOC" ASC'
-    df_cartas = pd.read_sql_query(query_cartas, engine)
-    
-    # 2. Traemos tu nueva tabla de links
-    query_links = 'SELECT * FROM links_drive'
-    df_links = pd.read_sql_query(query_links, engine)
-    
-    # 3. EL CRUCE MAGICO (Merge)
-    # Pandas buscará el 'NRO_DOC' en ambas tablas y les pegará el link correspondiente al lado.
-    if 'NRO_DOC' in df_cartas.columns and 'NRO_DOC' in df_links.columns:
-        df_final = pd.merge(df_cartas, df_links, on='NRO_DOC', how='left')
-    else:
-        df_final = df_cartas
-    
-    # 4. Tu limpieza de fechas habitual
-    df_final['FECHA_STR'] = pd.to_datetime(df_final['FECHA_DOC']).dt.strftime('%d/%m/%Y')
-    
-    if 'NRO_EXPENDIENTE' in df_final.columns:
-        df_final['NRO_EXPENDIENTE'] = df_final['NRO_EXPENDIENTE'].fillna("").astype(str).str.strip()
-        df_final['NRO_EXPENDIENTE'] = df_final['NRO_EXPENDIENTE'].apply(lambda x: "" if x.lower() in ["none", "nan", ""] else x)
-    else:
-        df_final['NRO_EXPENDIENTE'] = ""
-        
-    return df_final
+def mostrar_pdf(ruta_archivo):
+    if pd.notna(ruta_archivo) and str(ruta_archivo).strip() != "":
+        ruta_str = str(ruta_archivo).strip()
+        if ruta_str.startswith("http"):
+            if "drive.google.com" in ruta_str and "/view" in ruta_str:
+                ruta_str = ruta_str.split("/view")[0] + "/preview"
+            pdf_display = f'<iframe src="{ruta_str}" width="100%" height="800" type="application/pdf" style="border: none;"></iframe>'
+            st.markdown(pdf_display, unsafe_allow_html=True)
+        elif os.path.exists(ruta_str):
+            try:
+                with open(ruta_str, "rb") as f:
+                    base64_pdf = base64.b64encode(f.read()).decode('utf-8')
+                pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="800" type="application/pdf" style="border: none;"></iframe>'
+                st.markdown(pdf_display, unsafe_allow_html=True)
+            except Exception as e:
+                st.error(f"Error: {e}")
+st.divider() 
+
+
 
 # ==========================================
 # LÍNEA DE TIEMPO (IZQUIERDA)
