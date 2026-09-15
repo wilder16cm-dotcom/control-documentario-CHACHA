@@ -72,7 +72,7 @@ def cargar_datos():
     engine = create_engine(db_url)
     
     # 2. Hacemos la consulta a la nube
-    query = "SELECT * FROM control_documentario ORDER BY FECHA_DOC ASC"
+    query = 'SELECT * FROM control_documentario ORDER BY "FECHA_DOC" ASC'
     df = pd.read_sql_query(query, engine)
     
     # 3. Tu lógica de limpieza de fechas (se mantiene intocable)
