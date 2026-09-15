@@ -135,11 +135,21 @@ with col_busq:
     texto_busqueda = st.text_input("Buscador", placeholder="N° Documento o Asunto...")
 
 with col_comp:
-    lista_componentes = df['COMPONENTE'].dropna().unique().tolist()
-    componente_seleccionado = st.selectbox("Componente", ["Todos"] + lista_componentes)
+        # 1. Modo Defensivo: Verificamos si la columna existe realmente
+        if 'COMPONENTE' in df.columns:
+            lista_componentes = df['COMPONENTE'].dropna().unique().tolist()
+        else:
+            lista_componentes = []
+            # Esto imprimirá un cuadro rojo temporal en tu app mostrándote los nombres reales
+            st.error(f"Ojo: La columna COMPONENTE no existe. Las columnas reales son: {list(df.columns)}")
+            
+        componente_seleccionado = st.selectbox("Componente", ["Todos"] + lista_componentes)
 
-# Lógica dinámica: Mostrar entregables solo del componente seleccionado
-df_filtrado = df if componente_seleccionado == "Todos" else df[df['COMPONENTE'] == componente_seleccionado]
+    # 2. Lógica dinámica protegida
+    if 'COMPONENTE' in df.columns and componente_seleccionado != "Todos":
+        df_filtrado = df[df['COMPONENTE'] == componente_seleccionado]
+    else:
+        df_filtrado = df
 
 with col_ent:
     if 'ENTREGABLE' in df.columns:
