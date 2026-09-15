@@ -1,3 +1,4 @@
+from sqlalchemy import create_engine
 import streamlit as st
 import sqlite3
 import pandas as pd
@@ -64,13 +65,17 @@ st.markdown("""
 # ==========================================
 # CARGA DE DATOS
 # ==========================================
-@st.cache_data
+@st.cache_data(ttl=600) # Se refresca cada 10 minutos
 def cargar_datos():
-    conn = sqlite3.connect('db_elite.db')
-    query = "SELECT * FROM control_documentario ORDER BY FECHA_DOC ASC"
-    df = pd.read_sql_query(query, conn)
-    conn.close()
+    # 1. Streamlit saca la llave de tu bóveda secreta
+    db_url = st.secrets["DB_URL"]
+    engine = create_engine(db_url)
     
+    # 2. Hacemos la consulta a la nube
+    query = "SELECT * FROM control_documentario ORDER BY FECHA_DOC ASC"
+    df = pd.read_sql_query(query, engine)
+    
+    # 3. Tu lógica de limpieza de fechas (se mantiene intocable)
     df['FECHA_STR'] = pd.to_datetime(df['FECHA_DOC']).dt.strftime('%d/%m/%Y')
     
     if 'NRO_EXPENDIENTE' in df.columns:
