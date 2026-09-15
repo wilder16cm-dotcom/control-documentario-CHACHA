@@ -74,7 +74,12 @@ def cargar_datos():
     # 2. Hacemos la consulta a la nube
     query = 'SELECT * FROM control_documentario ORDER BY "FECHA_DOC" ASC'
     df = pd.read_sql_query(query, engine)
-    
+
+    # --- PARCHE ANTI-MINÚSCULAS ---
+    # Obliga a que toda la tabla vuelva a mayúsculas, sin importar cómo la mandó Neon
+    df.columns = df.columns.str.upper()
+    # ------------------------------
+         
     # 3. Tu lógica de limpieza de fechas (se mantiene intocable)
     df['FECHA_STR'] = pd.to_datetime(df['FECHA_DOC']).dt.strftime('%d/%m/%Y')
     
@@ -83,7 +88,7 @@ def cargar_datos():
         df['NRO_EXPENDIENTE'] = df['NRO_EXPENDIENTE'].apply(lambda x: "" if x.lower() in ["none", "nan", ""] else x)
     else:
         df['NRO_EXPENDIENTE'] = ""
-        
+
     return df
 
 @st.cache_data(ttl=600) # Le ponemos el TTL para que se refresque
