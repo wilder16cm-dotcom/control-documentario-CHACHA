@@ -135,21 +135,23 @@ with col_busq:
     texto_busqueda = st.text_input("Buscador", placeholder="N° Documento o Asunto...")
 
 with col_comp:
-        # 1. Modo Defensivo: Verificamos si la columna existe realmente
+        # Todo lo que está dentro del 'with' lleva 4 espacios (un TAB) extra hacia adentro
         if 'COMPONENTE' in df.columns:
             lista_componentes = df['COMPONENTE'].dropna().unique().tolist()
         else:
             lista_componentes = []
-            # Esto imprimirá un cuadro rojo temporal en tu app mostrándote los nombres reales
-            st.error(f"Ojo: La columna COMPONENTE no existe. Las columnas reales son: {list(df.columns)}")
+            st.error("Falta el parche de mayúsculas")
             
         componente_seleccionado = st.selectbox("Componente", ["Todos"] + lista_componentes)
 
-    # 2. Lógica dinámica protegida
-    if 'COMPONENTE' in df.columns and componente_seleccionado != "Todos":
-        df_filtrado = df[df['COMPONENTE'] == componente_seleccionado]
-    else:
-        df_filtrado = df
+# =========================================================================
+# ¡OJO AQUÍ! Esta parte va alineada EXACTAMENTE a la misma altura del 'with'
+# No puede tener ni un espacio más, ni un espacio menos.
+# =========================================================================
+if 'COMPONENTE' in df.columns and componente_seleccionado != "Todos":
+    df_filtrado = df[df['COMPONENTE'] == componente_seleccionado]
+else:
+    df_filtrado = df
 
 with col_ent:
     if 'ENTREGABLE' in df.columns:
