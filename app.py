@@ -86,18 +86,37 @@ def cargar_datos():
         
     return df
 
-@st.cache_data
+@st.cache_data(ttl=600) # Le ponemos el TTL para que se refresque
 def cargar_links_nube():
     try:
-        df_n = pd.read_excel('links_completos.xlsx')
+        # 1. Sacamos la llave de la bóveda (igual que en cargar_datos)
+        db_url = st.secrets["DB_URL"]
+        engine = create_engine(db_url)
+        
+        # 2. Leemos la tabla directamente desde Neon
+        query_links = "SELECT * FROM links_drive"
+        df_n = pd.read_sql_query(query_links, engine)
+        
+        # --- PARCHE DE SEGURIDAD (Mayúsculas a Formato Original) ---
+        # Renombramos las columnas para que el resto de tu app las reconozca
+        columnas_renombre = {
+            'NOMBRE': 'Nombre', 
+            'URL': 'URL', 
+            'CARPETA': 'Carpeta'
+        }
+        df_n.rename(columns=columnas_renombre, inplace=True)
+        # -----------------------------------------------------------
+        
+        # 3. Tu validación original (intacta)
         if 'Carpeta' not in df_n.columns:
             df_n['Carpeta'] = ""
+            
         return df_n
-    except:
+        
+    except Exception as e:
+        # Imprimimos el error real en consola por si falla algo
+        print(f"Error al cargar links desde Neon: {e}") 
         return pd.DataFrame(columns=['Nombre', 'URL', 'Carpeta'])
-
-df = cargar_datos()
-df_nube = cargar_links_nube()
 
 # ==========================================
 # ENCABEZADO Y FILTROS DINÁMICOS
